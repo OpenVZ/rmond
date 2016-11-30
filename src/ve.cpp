@@ -1341,8 +1341,8 @@ Unit* List::determine(const std::string& counter_)
 	if (!boost::starts_with(counter_, m))
 		return NULL;
 
-	PRL_UINT32 i = strtoul(&counter_[sizeof(m) - 1], NULL, 10);
-	if ((std::numeric_limits<PRL_UINT32>::max)() == i)
+	PRL_UINT64 i = strtoul(&counter_[sizeof(m) - 1], NULL, 10);
+	if (i > (std::numeric_limits<PRL_UINT32>::max)())
 		return NULL;
 
 	iterator_type p(m_data), e;

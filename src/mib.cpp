@@ -424,6 +424,7 @@ bool Central::init()
 		{
 			if (NULL != s_scheduler.get())
 			{
+				PrlApi_Deinit();
 				snmp_log(LOG_ERR, LOG_PREFIX"the MIB has "
 						"already been initialized\n");
 				return false;

@@ -42,19 +42,34 @@ namespace Request
 ///////////////////////////////////////////////////////////////////////////////
 // struct Details
 
+const char Details::s_NAME[] = TOKEN_PREFIX"backup";
+
 Details::Details(request_type* request_): m_request(request_)
 {
 }
 
-void Details::push(const char* name_, void* data_)
+void Details::backup(netsnmp_variable_list* data_)
 {
+	if (NULL == m_request)
+	{
+		snmp_free_varbind(data_);
+		snmp_log(LOG_ERR, "backup is impossible\n");
+
+		return cannot(SNMP_ERR_GENERR);
+	}
+	Netsnmp_Free_List_Data* b = (Netsnmp_Free_List_Data* )&snmp_free_varbind;
 	netsnmp_request_add_list_data(m_request,
-	      netsnmp_create_data_list(name_, data_, NULL));
+	      netsnmp_create_data_list(s_NAME, data_, b));
 }
 
-void Details::erase(const char* name_)
+netsnmp_variable_list* Details::restore()
 {
-	netsnmp_request_remove_list_data(m_request, name_);
+	netsnmp_variable_list* output = (netsnmp_variable_list* )
+		netsnmp_request_get_list_data(m_request, s_NAME);
+	if (NULL != output)
+		netsnmp_request_remove_list_data(m_request, s_NAME);
+
+	return output;
 }
 
 Details::cell_type* Details::cell() const

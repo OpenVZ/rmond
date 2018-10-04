@@ -43,26 +43,15 @@ struct Details
 
 	explicit Details(request_type* request_);
 
-        template<typename T>
-        T* pop(const char* name_)
-        {
-                T* output = find<T>(name_);
-                if (NULL != output)
-                        erase(name_);
-
-                return output;
-        }
-        template<typename T>
-        T* find(const char* name_) const
-        {
-                return (T* )netsnmp_request_get_list_data(m_request, name_);
-        }
 	void cannot(int code_);
 	cell_type* cell() const;
-	void erase(const char* name_);
-	void push(const char* name_, void* data_);
+	void backup(netsnmp_variable_list* data_);
+	netsnmp_variable_list* restore();
+
 private:
 	request_type* m_request;
+
+	static const char s_NAME[];
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -86,14 +75,11 @@ struct Unit: private Details
 	void reserve();
 	void rollback();
 	row_type inserted() const;
+
 private:
 	row_type row() const;
 	void cannotInsert();
 	void cannotExtract();
-	netsnmp_variable_list* getBackup()
-	{
-		return pop<netsnmp_variable_list>(TOKEN_PREFIX"backup");
-	}
 
 	request_type* m_request;
 	table_type* m_table;
@@ -183,7 +169,7 @@ void Unit<T>::reserve()
 			::free(v);
 			return cannot(SNMP_NOSUCHOBJECT);
 		}
-		return push(TOKEN_PREFIX"backup", v);
+		return backup(v);
 	} while(false);
 	int v = 0;
 	Asn::Policy::Integer<ASN_INTEGER>::put(*m_request->requestvb, v);
@@ -241,11 +227,11 @@ void Unit<T>::rollback()
 	row_type r = row();
 	if (NULL != r.get())
 	{
-		netsnmp_variable_list* b = getBackup();
+		netsnmp_variable_list* b = restore();
 		if (NULL != b)
 		{
 			r->put(cell()->colnum, *b);
-			::free(b);
+			snmp_free_varbind(b);
 		}
 	}
 	row_type i = inserted();

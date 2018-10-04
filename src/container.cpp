@@ -23,6 +23,7 @@
 #include "system.h"
 #include "container.h"
 #include <algorithm>
+#include <boost/bind.hpp>
 
 namespace Rmond
 {
@@ -95,8 +96,7 @@ netsnmp_container* make()
 netsnmp_factory* getFactory()
 {
 	static netsnmp_factory f = { "threadsafe_array",
-								 (netsnmp_factory_produce_f*)
-								 make };
+				 (netsnmp_factory_produce_f*)make };
 	return &f;
 }
 
@@ -105,8 +105,12 @@ netsnmp_factory* getFactory()
 int Unit::insert(const void* data_)
 {
 	Lock g(m_lock);
-	m_data.insert(data_);
-	return 0;
+
+	if (m_data.insert(data_).second)
+		return SNMPERR_SUCCESS;
+
+	snmp_log(LOG_ERR, "cannot insert entry\n");
+	return SNMPERR_GENERR;
 }
 
 void* Unit::find(const void* key_)
@@ -168,10 +172,15 @@ netsnmp_void_array* Unit::getSubset(void* data_)
 {
 	Lock g(m_lock);
 
-	range_type r = std::equal_range(m_data.begin(), m_data.end(), data_, data_type::key_compare());
-	if (r.first == r.second)
+	range_type r;
+	iterator_type e = m_data.end();
+	r.first = std::find_if(m_data.begin(), e,
+		boost::bind(&netsnmp_ncompare_netsnmp_index, _1, data_) == 0);
+	if (e == r.first)
 		return NULL;
 
+	r.second = std::find_if(r.first, e,
+		boost::bind(&netsnmp_ncompare_netsnmp_index, _1, data_) > 0);
 	void **rtn = static_cast<void **>(::malloc(std::distance(r.first, r.second) * sizeof(void*)));
 	if (rtn == NULL)
 		return NULL;

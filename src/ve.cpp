@@ -671,16 +671,17 @@ bool Update::apply(table_type::tuple_type& to_)
 
 void Update::fill(const table_type::key_type& uuid_, PRL_HANDLE )
 {
-	unsigned n = 0;
 	VE::tupleSP_type x = m_ve.lock();
-	if (NULL != x.get())
-	{
-		n = x->get<CPU_NUMBER>();
-		if (PRL_CPU_UNLIMITED == n)
-			return;
+	if (NULL == x.get())
+		return;
 
-		m_map.clear();
-	}
+	unsigned n = x->get<CPU_NUMBER>();
+	if (PRL_CPU_UNLIMITED == n)
+		return;
+
+	n = (std::min)(256u, n);
+	m_map.clear();
+
 	for (unsigned i = 0; i < n; ++i)
 	{
 		m_map[i] = Flavor(i).tuple(uuid_);

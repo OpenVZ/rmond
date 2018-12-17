@@ -33,6 +33,7 @@ namespace
 std::map<uintptr_t, Rmond::ServerSP> g_active;
 pthread_mutex_t g_big = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t g_ves = PTHREAD_MUTEX_INITIALIZER;
+std::auto_ptr<Rmond::Central> g_central;
 
 } // namespace
 
@@ -407,8 +408,6 @@ PRL_RESULT PRL_CALL Server::handle(PRL_HANDLE event_, PRL_VOID_PTR user_)
 ///////////////////////////////////////////////////////////////////////////////
 // struct Central
 
-Scheduler::UnitSP Central::s_scheduler;
-
 bool Central::init()
 {
 	PRL_RESULT e = PrlApi_Init(PARALLELS_API_VER);
@@ -422,7 +421,7 @@ bool Central::init()
 		Lock g(g_big);
 		do
 		{
-			if (NULL != s_scheduler.get())
+			if (NULL != g_central.get())
 			{
 				PrlApi_Deinit();
 				snmp_log(LOG_ERR, LOG_PREFIX"the MIB has "
@@ -434,17 +433,13 @@ bool Central::init()
 			if (NULL == s.get())
 				break;
 
-			Sink::ReaperSP x = Sink::Unit::inject(s);
-			if (NULL == x.get())
-				break;
-
-			Scheduler::UnitSP y(new Scheduler::Unit);
-			if (y->go() || y->push(Handler::Link(s)))
-				break;
-
-			y->push(Handler::Reaper(x));
-			s_scheduler = y;
-			return false;
+			g_central.reset(new Central(s));
+			if (NULL != g_central->m_scheduler.get())
+			{
+				atexit(&Central::fini);
+				return false;
+			}
+			g_central.reset();
 		} while(false);
 	}
 	PrlApi_Deinit();
@@ -453,16 +448,12 @@ bool Central::init()
 
 void Central::fini()
 {
-	Lock g(g_big);
-	Scheduler::UnitSP x = s_scheduler;
-	if (NULL != x.get())
+	Central* x = NULL;
 	{
-		s_scheduler.reset();
-		g_active.clear();
-		g.leave();
-		PrlApi_Deinit();
-		x->stop();
+		Lock g(g_big);
+		x = g_central.release();
 	}
+	delete x;
 }
 
 Oid_type Central::traps()
@@ -480,13 +471,44 @@ Oid_type Central::product()
 SchedulerSP Central::scheduler()
 {
 	Lock g(g_big);
-	return s_scheduler;
+	if (NULL == g_central.get())
+		return SchedulerSP();
+
+	return g_central->m_scheduler;
 }
 
 bool Central::schedule(unsigned timeout_, Scheduler::Queue::job_type job_)
 {
 	SchedulerSP x = scheduler();
 	return NULL == x.get() || x->push(timeout_, job_);
+}
+
+Central::Central(const ServerSP& server_)
+{
+	Sink::ReaperSP x = Sink::Unit::inject(server_);
+	if (NULL == x.get())
+		return;
+
+	Scheduler::UnitSP y(new Scheduler::Unit);
+	if (y->go() || y->push(Handler::Link(server_)))
+		return;
+
+	y->push(Handler::Reaper(x));
+	m_scheduler = y;
+}
+
+Central::~Central()
+{
+	Scheduler::UnitSP x = m_scheduler;
+	if (NULL != x.get())
+	{
+		PrlApi_Deinit();
+		Lock g(g_big);
+		m_scheduler.reset();
+		g_active.clear();
+		g.leave();
+		x->stop();
+	}
 }
 
 namespace Sink

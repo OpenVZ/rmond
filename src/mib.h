@@ -46,6 +46,8 @@ typedef boost::shared_ptr<Server> ServerSP;
 
 struct Central
 {
+	~Central();
+
 	static bool init();
 	static void fini();
 
@@ -54,7 +56,9 @@ struct Central
 	static SchedulerSP scheduler();
 	static bool schedule(unsigned timeout_, Scheduler::Queue::job_type job_);
 private:
-	static Scheduler::UnitSP s_scheduler;
+	explicit Central(const ServerSP& server_);
+
+	Scheduler::UnitSP m_scheduler;
 };
 
 } // namespace Rmond

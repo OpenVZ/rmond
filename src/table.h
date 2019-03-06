@@ -24,6 +24,7 @@
 #define TABLE_H
 
 #include <list>
+#include "system.h"
 #include "details.h"
 
 namespace Rmond
@@ -247,7 +248,7 @@ private:
 // struct Unit
 
 template<class T>
-struct Unit
+struct Unit: boost::noncopyable
 {
 	typedef Tuple::Key<T> key_type;
 	typedef Tuple::Unit<T> tuple_type;
@@ -273,12 +274,13 @@ private:
 	static int handle(netsnmp_mib_handler* , netsnmp_handler_registration* ,
 		netsnmp_agent_request_info* , netsnmp_request_info* );
 
+	mutable pthread_mutex_t m_lock;
 	netsnmp_container* m_storage;
 	netsnmp_handler_registration* m_registration;
 };
 
 template<class T>
-Unit<T>::Unit(): m_storage(NULL), m_registration(NULL)
+Unit<T>::Unit(): m_lock(), m_storage(NULL), m_registration(NULL)
 {
 	std::string n = std::string(TOKEN_PREFIX)
 				.append(schema_type::name())
@@ -363,6 +365,7 @@ typename Unit<T>::tupleSP_type Unit<T>::extract(netsnmp_request_info* request_) 
 template<class T>
 typename Unit<T>::tupleSP_type Unit<T>::find(const netsnmp_index& key_) const
 {
+	Lock g(m_lock);
 	void* r = CONTAINER_FIND(m_storage, &key_);
 	if (NULL == r)
 		return tupleSP_type();
@@ -383,10 +386,12 @@ typename Unit<T>::tupleSP_type Unit<T>::find(const key_type& key_) const
 template<class T>
 bool Unit<T>::insert(tupleSP_type tuple_)
 {
+	Lock g(m_lock);
 	row_type* r = new row_type(tuple_->key(), tuple_);
 	int e = CONTAINER_INSERT(m_storage, r);
 	if (0 != e)
 	{
+		g.leave();
 		delete r;
 		return true;
 	}
@@ -396,12 +401,14 @@ bool Unit<T>::insert(tupleSP_type tuple_)
 template<class T>
 bool Unit<T>::erase(const tuple_type& tuple_)
 {
+	Lock g(m_lock);
 	netsnmp_index x = tuple_.key();
 	row_type* r = (row_type* )CONTAINER_FIND(m_storage, &x);
 	if (NULL == r)
 		return true;
 	
 	CONTAINER_REMOVE(m_storage, &x);
+	g.leave();
 	delete r;
 	return false;
 }
@@ -409,6 +416,7 @@ bool Unit<T>::erase(const tuple_type& tuple_)
 template<class T>
 std::list<typename Unit<T>::tupleSP_type> Unit<T>::range(netsnmp_index key_) const
 {
+	Lock g(m_lock);
 	netsnmp_void_array* a = CONTAINER_GET_SUBSET(m_storage, &key_);
 	std::list<tupleSP_type> output;
 	if (NULL != a)
@@ -418,6 +426,7 @@ std::list<typename Unit<T>::tupleSP_type> Unit<T>::range(netsnmp_index key_) con
 			row_type* r = (row_type* )a->array[i];
 			output.push_back(r->second);
 		}
+		g.leave();
 		free(a->array);
 		free(a);
 	}

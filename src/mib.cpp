@@ -23,7 +23,6 @@
 #include "host.h"
 #include "sink.h"
 #include <limits>
-#include "system.h"
 #include "container.h"
 #include <boost/bind.hpp>
 #include <boost/foreach.hpp>

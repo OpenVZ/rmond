@@ -108,7 +108,10 @@ int Unit::insert(const void* data_)
 	Lock g(m_lock);
 
 	if (m_data.insert(data_).second)
+	{
+		m_container.insert(data_);
 		return SNMPERR_SUCCESS;
+	}
 
 	snmp_log(LOG_ERR, "cannot insert entry\n");
 	return SNMPERR_GENERR;
@@ -159,6 +162,7 @@ int Unit::remove(const void* data_)
 	if (i == m_data.end())
 		return -1;
 
+	m_container.erase(*i);
 	m_data.erase(i);
 	return 0;
 }
@@ -167,6 +171,7 @@ void Unit::clear(netsnmp_container_obj_func* f_, void* context_)
 {
 	Lock g(m_lock);
 	m_data.clear();
+	m_container.clear();
 }
 
 netsnmp_void_array* Unit::getSubset(void* data_)
@@ -202,6 +207,12 @@ netsnmp_void_array* Unit::getSubset(void* data_)
 	va->array = rtn;
 	
 	return va;
+}
+
+bool Unit::contains(const void* data_)
+{
+	Lock g(m_lock);
+	return m_container.end() != m_container.find(data_);
 }
 
 void inject()

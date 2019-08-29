@@ -28,6 +28,7 @@
 #include <net-snmp/net-snmp-includes.h>
 #include <set>
 #include <iterator>
+#include <boost/unordered_set.hpp>
 
 namespace Rmond
 {
@@ -40,6 +41,7 @@ namespace ThreadsafeContainer
 struct Unit
 {
 	int insert(const void* data_);
+	bool contains(const void* data_);
 	void* find(const void* key_);
 	void* findNext(const void* key_);
 	size_t size();
@@ -62,6 +64,7 @@ private:
 
 	data_type m_data;
 	pthread_mutex_t m_lock;
+	boost::unordered_set<value_type> m_container;
 };
 
 void inject();

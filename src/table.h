@@ -27,6 +27,7 @@
 #include <list>
 #include "system.h"
 #include "details.h"
+#include "container.h"
 
 namespace Rmond
 {
@@ -360,7 +361,11 @@ template<class T>
 typename Unit<T>::tupleSP_type Unit<T>::extract(netsnmp_request_info* request_) const
 {
 	row_type* r = (row_type* )netsnmp_container_table_extract_context(request_);
-	return NULL == r ? tupleSP_type() : r->second;
+	Lock g(m_lock);
+	if (((ThreadsafeContainer::Unit* )m_storage->container_data)->contains(r))
+		return r->second;
+
+	return tupleSP_type();
 }
 
 template<class T>

@@ -155,7 +155,8 @@ void* Unit::consume(void* argv_)
 			g.enter();
 		}
 	}
-	pthread_exit(NULL);
+
+	return NULL;
 }
 
 bool Unit::push(unsigned when_, const job_type& job_)

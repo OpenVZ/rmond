@@ -410,7 +410,7 @@ PRL_RESULT PRL_CALL Server::handle(PRL_HANDLE event_, PRL_VOID_PTR user_)
 
 bool Central::init()
 {
-	PRL_RESULT e = PrlApi_Init(PARALLELS_API_VER);
+	PRL_RESULT e = PrlApi_Init(VIRTUOZZO_API_VER);
 	if (PRL_FAILED(e) && e != PRL_ERR_DOUBLE_INIT)
 	{
 		snmp_log(LOG_ERR, LOG_PREFIX"cannot init the PrlSDK: 0x%x\n", e);

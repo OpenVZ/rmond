@@ -162,7 +162,7 @@ class Unit: private netsnmp_index
 		template<class U>
 		void operator()(U )
 		{
-			m_data->put<U::value>(m_index->get<U::value>());
+			m_data->template put<U::value>(m_index->template get<U::value>());
 		}
 	private:
 		data_type* m_data;
@@ -208,7 +208,7 @@ public:
 	template<T N>
 	typename Details::Column<T, N>::type::value_type get() const
 	{
-		return m_data.get<N>();
+		return m_data.template get<N>();
 	}
 	bool get(int name_, netsnmp_variable_list& dst_) const
 	{

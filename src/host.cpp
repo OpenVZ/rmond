@@ -194,7 +194,7 @@ private:
 template<class T>
 void Inject::operator()(T) const
 {
-	std::auto_ptr<Unit> w(new Unit(m_tuple));
+	std::unique_ptr<Unit> w(new Unit(m_tuple));
 	netsnmp_handler_registration* r = Schema<Host::PROPERTY>::handler
 					(T::value,
 					&Unit::handle<typename T::value_type, T::value>,

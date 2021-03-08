@@ -60,8 +60,8 @@ struct Callback
 		{
 		case SNMPD_CALLBACK_SEND_TRAP1:
 		case SNMPD_CALLBACK_SEND_TRAP2:
-			snmp_log(LOG_WARNING, LOG_PREFIX"do real initialization "
-						"of the "TOKEN" module\n");
+			snmp_log(LOG_WARNING, LOG_PREFIX "do real initialization "
+						"of the " TOKEN" module\n");
 			// NB. the main thread is the dedicated one for the
 			// signal handling. all the rest should block all
 			// the signals. this call is in context of the main
@@ -87,19 +87,19 @@ extern "C"
 
 void init_RmondMIB(void)
 {
-        snmp_log(LOG_WARNING, LOG_PREFIX"Initializing the "TOKEN" module\n");
+        snmp_log(LOG_WARNING, LOG_PREFIX "Initializing the " TOKEN" module\n");
 	// NB. cannot do initialization before the fork in case of a daemon
 	// snmpd. subscribe on the startup trap and do real init inside the
 	// callback, then unsubscribe.
 	int e = Callback::inject();
-        snmp_log(LOG_WARNING, LOG_PREFIX"Done initalizing "TOKEN" module %d\n", e);
+        snmp_log(LOG_WARNING, LOG_PREFIX "Done initalizing " TOKEN" module %d\n", e);
 }
 
 void deinit_RmondMIB(void)
 {
-        snmp_log(LOG_WARNING, LOG_PREFIX"Finalizing the "TOKEN" module\n");
+        snmp_log(LOG_WARNING, LOG_PREFIX "Finalizing the " TOKEN" module\n");
 	Rmond::Central::fini();
-        snmp_log(LOG_WARNING, LOG_PREFIX"Done finalizing "TOKEN" module\n");
+        snmp_log(LOG_WARNING, LOG_PREFIX "Done finalizing " TOKEN" module\n");
 }
 
 }

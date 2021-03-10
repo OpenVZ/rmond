@@ -82,7 +82,7 @@ struct Named: Provider
 	netsnmp_variable_list* make() const;
 private:
 	name_type m_name;
-	std::auto_ptr<Provider> m_value;
+	std::unique_ptr<Provider> m_value;
 };
 
 namespace Cell

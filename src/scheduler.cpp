@@ -87,7 +87,7 @@ bool Unit::go()
 		return true;
 
 	boost::shared_ptr<State> a(new State);
-	std::auto_ptr<argv_type> v(new argv_type);
+	std::unique_ptr<argv_type> v(new argv_type);
 	v->get<0>() = a;
 	int e = pthread_create(&m_consumer, NULL, &Unit::consume, v.get());
 	if (0 != e)

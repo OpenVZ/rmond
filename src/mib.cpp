@@ -33,7 +33,7 @@ namespace
 std::map<uintptr_t, Rmond::ServerSP> g_active;
 pthread_mutex_t g_big = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t g_ves = PTHREAD_MUTEX_INITIALIZER;
-std::auto_ptr<Rmond::Central> g_central;
+std::unique_ptr<Rmond::Central> g_central;
 
 } // namespace
 
@@ -227,7 +227,7 @@ Server::Server(const Host::space_type& host_, const VE::space_type& ves_):
 
 bool Server::attach(PRL_HANDLE host_)
 {
-	std::auto_ptr<Host::Unit> h(new Host::Unit(host_, m_host.first));
+	std::unique_ptr<Host::Unit> h(new Host::Unit(host_, m_host.first));
 	std::list<VE::UnitSP> a;
 	if (h->list(a, m_ves.first))
 		return true;

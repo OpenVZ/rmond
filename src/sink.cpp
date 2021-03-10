@@ -82,8 +82,6 @@ Unit::Unit(table_type::tupleSP_type tuple_, Metrix::tableWP_type metrix_):
 	std::string z = y.str();
 	x.version = SNMP_VERSION_2c;
 	x.peername = &z[0];
-	x.remote_port = m_tuple->get<PORT>();
-
 	m_session = snmp_sess_open(&x);
 }
 

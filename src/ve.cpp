@@ -74,7 +74,7 @@ private:
 
 	H m_h;
 	PRL_UINT32 m_p;
-	std::auto_ptr<D> m_value;
+	std::unique_ptr<D> m_value;
 };
 
 } // namespace
@@ -1152,7 +1152,7 @@ void Io::refresh(PRL_HANDLE h_)
 	if (n.empty())
 		return;
 
-	std::auto_ptr<Flavor> f(Flavor::determine(m_ve, n));
+	std::unique_ptr<Flavor> f(Flavor::determine(m_ve, n));
 	if (NULL == f.get())
 		return;
 	table_type::tupleSP_type t = m_system.tuple(*f);
@@ -1426,7 +1426,7 @@ void Event::refresh(PRL_HANDLE h_)
 		return;
 
 	Device::List a(m_ve);
-	std::auto_ptr<Device::Unit> d(a.determine(n));
+	std::unique_ptr<Device::Unit> d(a.determine(n));
 	if (NULL == d.get())
 		return;
 	table_type::tupleSP_type t = m_system.tuple(Flavor(*d));
@@ -1498,7 +1498,7 @@ void Update::fill(const table_type::key_type& uuid_, PRL_HANDLE h_)
 	Iterator<Usage::Policy, PRL_HANDLE, Usage::Device> e, p(h_);
 	for (; p != e; ++p)
 	{
-		std::auto_ptr<Device::Unit> d(m_devices.find(p->name()));
+		std::unique_ptr<Device::Unit> d(m_devices.find(p->name()));
 		if (NULL != d.get())
 			m_map[d->name()] = Flavor(*d).tuple(uuid_, *p);
 	}

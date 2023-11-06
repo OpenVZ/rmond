@@ -64,15 +64,21 @@ template<class T> struct Schema;
 template<>
 struct Schema<void>
 {
-	template<class T>
+	template <typename Handler>
+	static void custom_handler_deleter(void* myvoid) {
+		delete (Handler*)myvoid;
+	}
+
+	template<class T, typename Handler>
 	static netsnmp_handler_registration* table(Netsnmp_Node_Handler* handler_,
-			void* my_, int mode_)
+			Handler* my_, int mode_)
 	{
 		netsnmp_mib_handler* h = netsnmp_create_handler(Schema<T>::name(), handler_);
 		if (NULL == h)
 			return NULL;
 
 		h->myvoid = my_;
+		h->data_free = custom_handler_deleter<Handler>;
 		Oid_type u = Schema<T>::uuid();
 		netsnmp_handler_registration* r = 
 				netsnmp_handler_registration_create(Schema<T>::name(), h,
